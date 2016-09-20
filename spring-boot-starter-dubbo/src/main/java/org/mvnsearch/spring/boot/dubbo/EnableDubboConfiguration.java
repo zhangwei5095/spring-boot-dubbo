@@ -15,5 +15,5 @@ public @interface EnableDubboConfiguration {
     /**
      * scan package for dubbo
      */
-    String value();
+    String value() default "";
 }

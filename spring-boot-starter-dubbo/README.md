@@ -27,7 +27,7 @@ Spring Boot Start Dubbo
      
      
         @SpringBootApplication
-        @EnableDubboConfiguration("org.mvnsearch.uic")
+        @EnableDubboConfiguration()
         public class SpringBootDubboServerApplication 
 
 其中org.mvnsearch.uic是Dubbo要扫描的package,根据Dubbo的Service annotation发布服务.
@@ -36,7 +36,7 @@ Spring Boot Start Dubbo
 
 
     @Component
-    @DubboService
+    @DubboService(interfaceClass = UicTemplate.class)
     public class UicTemplateImpl implements UicTemplate
 
 ### 客户端如何引用Dubbo服务
@@ -58,8 +58,21 @@ Spring Boot Start Dubbo
         spring.dubbo.app = dubbo-uic-consumer
         spring.dubbo.registry = redis://192.168.99.100:6379
         spring.dubbo.protocol = dubbo
-        
-* 然后在xml中声明 dubbo consumer beans的配置文件,样例如下:
+     
+* 接下来你只需要创建一个ReferenceBean即可,代码如下。 这个也是Spring Boot推荐的做法。
+
+```
+  @Bean
+    public ReferenceBean<UicTemplate> uicTemplate() {
+        return getConsumerBean(UicTemplate.class, properties.getVersion(), properties.getTimeout());
+    }
+```
+* 如果你不想创建上述的ReferenceBean,你也可以在在要引用的Dubbo Service Interface上添加 @DubboConsumer即可,代码如下:
+```
+   @DubboConsumer
+   private UicTemplate uicTemplate;
+```
+* 最后如果你还想用xml中声明 dubbo consumer beans的配置文件,样例如下:
 
 
        <?xml version="1.0" encoding="UTF-8"?>
@@ -81,13 +94,34 @@ Spring Boot Start Dubbo
        @ImportResource("/uic-dubbo-consumer.xml")
        public class SpringBootDubboClientApplication
 
+### 优雅上下线
+当我们要重新发布应用时候,我们需要新停掉服务,然后稍等一段时间,等客户端连接全部切换到其他服务器上,这个时候我们才能开始部署服务。这个就是我们称之为优雅下线,
+目前可以通过 http://localhost:8080/dubbo/offline
+
 ### 其他
 
-* Dubbo Endpint: spring-boot-starter-dubbo提供了/tair的enpoint,通过该url可以快速了解Tair的运行信息
+* Dubbo Endpint: spring-boot-starter-dubbo提供了dubbo的enpoint,通过该url可以快速了解Dubbo的运行信息
 * health indicator: 对远程服务进行echo service调用进行health检查,通过 /health 进行查看
 
+### 注意
 
-### Todo
+* 对应Dubbo服务端应用来说,在重新发布应用时需要调用 /dubbo/offline 首先进行应用下线,然后稍后15秒钟后进行发布.
 
-* metrics: 客户端和服务端的统计信息,主要是方法调用的统计信息
-* connection: 客户端和服务器端的连接明显信息
+### 第三方客户端整合
+
+如果你要在第三方客户端,如uic-client,直接整合Dubbo服务对外提供相关的接口,可以使用Spring Boot和Dubbo结合,自动完成auto configuration,
+如spring-boot-starter-uic-client代码中,引入spring-boot-starter-dubbo,然后在UicAutoConfiguration中进行Dubbo服务关联,代码如下:
+
+        @Bean
+        public ReferenceBean uicTemplate() {
+            ReferenceBean<UicTemplate> referenceBean = new ReferenceBean<UicTemplate>();
+            String canonicalName = interfaceClazz.getCanonicalName();
+            referenceBean.setInterface(canonicalName);
+            referenceBean.setId(canonicalName);
+            referenceBean.setTimeout(10000);
+            return referenceBean;
+        }
+这里一定要使用类的canonicalName方式初始化,主要是解决Dubbo ClassLoader和Spring Boot的class loader问题.
+当然,你可能需要通过自定义properties方式来设置对应的版本号. 这样他人在引入spring-boot-starter-uic-client后就可以直接使用UicTemplate对应的服务啦.
+
+

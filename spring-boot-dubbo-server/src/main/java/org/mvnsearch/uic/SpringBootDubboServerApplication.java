@@ -3,10 +3,9 @@ package org.mvnsearch.uic;
 import org.mvnsearch.spring.boot.dubbo.EnableDubboConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ImportResource;
 
 @SpringBootApplication
-@EnableDubboConfiguration("org.mvnsearch.uic")
+@EnableDubboConfiguration
 public class SpringBootDubboServerApplication {
 
     public static void main(String[] args) {

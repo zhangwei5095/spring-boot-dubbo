@@ -48,6 +48,11 @@ public class DubboAutoConfiguration {
     }
 
     @Bean
+    public DubboOperationEndpoint dubboOperationEndpoint() {
+        return new DubboOperationEndpoint();
+    }
+
+    @Bean
     public DubboHealthIndicator dubboHealthIndicator() {
         return new DubboHealthIndicator();
     }
@@ -55,6 +60,11 @@ public class DubboAutoConfiguration {
     @Bean
     public DubboEndpoint dubboEndpoint() {
         return new DubboEndpoint();
+    }
+
+    @Bean
+    public DubboMetrics dubboConsumerMetrics() {
+        return new DubboMetrics();
     }
 
 }
